@@ -7,6 +7,10 @@ import torch.nn.init as init
 
 
 class SparseConv2D(torch.nn.Module):
+    """Sparse 2d convolution.
+
+    NOTE: Only supports NCHW format and no padding.
+    """
     __constants__ = ['in_channels', 'out_channels']
     in_channels: int
     out_channels: int
