@@ -4,6 +4,7 @@ import numpy as np
 import scipy.sparse as ss
 import math
 import torch.nn.init as init
+import torch.nn.functional as F
 
 
 class SparseConv2D(torch.nn.Module):
@@ -16,11 +17,12 @@ class SparseConv2D(torch.nn.Module):
     out_channels: int
     weight: torch.Tensor
 
-    def __init__(self, in_channels, out_channels,kernel_size,stride = 1,bias=True):
+    def __init__(self, in_channels, out_channels,kernel_size,stride = 1,padding = 0,bias=True):
         super(SparseConv2D, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
+        self.padding = padding
         self.stride = stride
         if (bias):
             self.bias = torch.nn.Parameter(torch.empty(out_channels,1))
@@ -53,6 +55,8 @@ class SparseConv2D(torch.nn.Module):
         return out
 
     def img2col(self,x):
+        if(self.padding > 0):
+            x = F.pad(x, (self.padding,self.padding),"constant", 0)  
         # NCHW -> C*K*K, NHW
         input_windows = x.unfold(2, self.kernel_size, self.stride).unfold(3, self.kernel_size, self.stride)
         # C,k*k,N, H, W
@@ -100,8 +104,8 @@ class SparseConv1x1(torch.nn.Module):
     def forward(self,x):
       # input NCHW
         input_shape = x.shape
-        flat_x = x.transpose(0,1).reshape([input_shape[1],input_shape[0]*input_shape[2] * input_shape[3]]).contiguous()
         output_shape = [self.out_channels,input_shape[0], input_shape[2], input_shape[3]]
+        flat_x = x.transpose(0,1).reshape([input_shape[1],input_shape[0]*input_shape[2] * input_shape[3]]).contiguous()
         if not self.bias is None:
             flat_output = torch.sparse.addmm(self.bias,self.weight, flat_x)
         else:
@@ -159,7 +163,5 @@ class SparseLinear(torch.nn.Module):
 def conv2D(in_channels, out_channels, kernel_size, stride=1, padding=0,  bias=True):
   if (kernel_size == 1 and stride ==1  and padding == 0):
     return SparseConv1x1(in_channels, out_channels,bias)
-  elif padding == 0:
-      return SparseConv2D(in_channels,out_channels,kernel_size,bias=bias,stride=stride)
   else:
-    return nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+    return SparseConv2D(in_channels, out_channels, kernel_size, stride, padding)
