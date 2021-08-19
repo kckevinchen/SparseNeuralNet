@@ -28,7 +28,7 @@ class SparseConv2D(tf.keras.layers.Layer):
     def __init__(self,
                  filters,
                  kernel_size,
-                sparsity = 0.7,
+                 sparsity=0.7,
                  strides=(1, 1),
                  rates=(1, 1),
                  padding='VALID',
@@ -270,25 +270,33 @@ class GeneralConv2D(tf.keras.layers.Layer):
     """
 
     def __init__(self, filters, kernel_size, stride=1, padding=0,
-                 bias=True, sparsity=0, name=None):
+                 bias=True, sparsity=0.5, name=None, sparse_level=3):
         super(GeneralConv2D, self).__init__(name=name)
         self.padding_layer = None
         # Padding
         if padding != 0:
             self.padding_layer = tf.keras.layers.ZeroPadding2D(
                 padding=padding, data_format="channels_first")
-
-        # Convolution
-        # self.conv_layer = MaskedConv2D(filters, kernel_size, use_bias=bias, strides=stride,name=name,data_format="channels_first")
-        # self.conv_layer = tf.keras.layers.Conv2D(filters, kernel_size, use_bias=bias, strides=stride,name=name,data_format="channels_first")
-        if (kernel_size ==1 and stride==1):
-          self.conv_layer = SparseConv1x1(filters, sparsity,use_bias = bias,name=name)
+        if sparse_level == 0:
+            self.conv_layer = tf.keras.layers.Conv2D(
+                filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
+        elif sparse_level == 1:
+            self.conv_layer = MaskedConv2D(
+                filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
+        elif sparse_level == 2:
+            if (kernel_size == 1 and stride == 1):
+                self.conv_layer = SparseConv1x1(
+                    filters, sparsity, use_bias=bias, name=name)
+            else:
+                self.conv_layer = MaskedConv2D(
+                    filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
         else:
-          #TODO: block gradient for certain weights
-          self.conv_layer = SparseConv2D(
-              filters, kernel_size, use_bias=bias, strides=stride, name=name)
-          # self.conv_layer = MaskedConv2D(
-          #     filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
+            if (kernel_size == 1 and stride == 1):
+                self.conv_layer = SparseConv1x1(
+                    filters, sparsity, use_bias=bias, name=name)
+            else:
+                self.conv_layer = SparseConv2D(
+                    filters, kernel_size, use_bias=bias, strides=stride, name=name)
 
     def load_from_np(self, kernel_np):
         self.conv_layer.load_from_np(kernel_np)
