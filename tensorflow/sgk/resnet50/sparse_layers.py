@@ -278,23 +278,29 @@ class GeneralConv2D(tf.keras.layers.Layer):
             self.padding_layer = tf.keras.layers.ZeroPadding2D(
                 padding=padding, data_format="channels_first")
         if sparse_level == 0:
+            self.type = "level_{}_keras_layers_Conv2D_ksize_{}".format(sparse_level, kernel_size)
             self.conv_layer = tf.keras.layers.Conv2D(
                 filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
         elif sparse_level == 1:
+            self.type= "level_{}_MaskedConv2D_ksize_{}".format(sparse_level,kernel_size)
             self.conv_layer = MaskedConv2D(
                 filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
         elif sparse_level == 2:
             if (kernel_size == 1 and stride == 1):
+                self.type = "level_{}_SparseConv1x1_ksize_{}".format(sparse_level,kernel_size)
                 self.conv_layer = SparseConv1x1(
                     filters, sparsity, use_bias=bias, name=name)
             else:
+                self.type="level_{}_MaskedConv2D_ksize_{}".format(sparse_level,kernel_size)
                 self.conv_layer = MaskedConv2D(
                     filters, kernel_size, use_bias=bias, strides=stride, name=name, data_format="channels_first")
         else:
             if (kernel_size == 1 and stride == 1):
+                self.type="level_{}_SparseConv1x1_ksize_{}".format(sparse_level,kernel_size)
                 self.conv_layer = SparseConv1x1(
                     filters, sparsity, use_bias=bias, name=name)
             else:
+                self.type="level_{}_SparseConv2D_ksize_{}".format(sparse_level,kernel_size)
                 self.conv_layer = SparseConv2D(
                     filters, kernel_size, use_bias=bias, strides=stride, name=name)
 
