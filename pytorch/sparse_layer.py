@@ -21,9 +21,31 @@ class SparseConv2D(torch.nn.Module):
         super(SparseConv2D, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.padding = padding
-        self.stride = stride
+
+        if(isinstance(kernel_size, tuple)):
+            self.kernel_h, self.kernel_w = kernel_size
+        elif(isinstance(kernel_size, int)):
+            self.kernel_h, self.kernel_w = (kernel_size,kernel_size)
+        else:
+            print("Unsupported kernel size")
+            exit()
+
+        if(isinstance(stride, tuple)):
+            self.stride_h, self.stride_w = stride
+        elif(isinstance(stride, int)):
+            self.stride_h, self.stride_w = (stride,stride)
+        else:
+            print("Unsupported stride")
+            exit()
+
+        if(isinstance(padding, tuple)):
+            self.padding_h, self.padding_w = padding
+        elif(isinstance(padding, int)):
+            self.padding_h, self.padding_w = (padding,padding)
+        else:
+            print("Unsupported padding")
+            exit()
+
         if (bias):
             self.bias = torch.nn.Parameter(torch.empty(out_channels,1))
         else:
@@ -32,10 +54,11 @@ class SparseConv2D(torch.nn.Module):
 
     def reset_parameters(self,sparsity = 0,weight_np = None ):
         if weight_np is None :
-            weight_np = ss.random(self.out_channels,self.in_channels*self.kernel_size*self.kernel_size, density=1-sparsity).toarray()
+            weight_np = ss.random(self.out_channels,self.in_channels*self.kernel_w*self.kernel_h, density=1-sparsity).toarray()
         weight_np = weight_np.astype(np.float32)
         if (weight_np.ndim == 4):
             weight_np = weight_np.reshape(weight_np.shape[0],-1)
+        assert weight_np.shape == (self.out_channels,self.in_channels*self.kernel_w*self.kernel_h), "Wrong matrix size for kernel"
         self.weight = torch.nn.Parameter(torch.from_numpy(weight_np).to_sparse().coalesce())
         self.build_bias()
 
@@ -46,7 +69,7 @@ class SparseConv2D(torch.nn.Module):
             init.uniform_(self.bias, -bound, bound)
 
     def forward(self,x):
-        flat_x,out_shape = self.img2col(x)
+        flat_x,out_shape = self.pad_img2col(x)
         if not self.bias is None:
             flat_output = torch.sparse.addmm(self.bias,self.weight, flat_x)
         else:
@@ -54,11 +77,11 @@ class SparseConv2D(torch.nn.Module):
         out =   flat_output.reshape([self.out_channels , *out_shape]).transpose(0,1)
         return out
 
-    def img2col(self,x):
-        if(self.padding > 0):
-            x = F.pad(x, (self.padding,self.padding),"constant", 0)  
+    def pad_img2col(self,x):
+        if(self.padding_w > 0 or self.padding_h > 0):
+            x = F.pad(x, (self.padding_h,self.padding_w),"constant", 0)  
         # NCHW -> C*K*K, NHW
-        input_windows = x.unfold(2, self.kernel_size, self.stride).unfold(3, self.kernel_size, self.stride)
+        input_windows = x.unfold(2, self.kernel_h, self.stride_h).unfold(3, self.kernel_w, self.stride_w)
         # C,k*k,N, H, W
         input_windows = input_windows.contiguous().view(*input_windows.size()[:-2], -1).permute(1,4,0,2,3)
         out_shape = [input_windows.shape[2],input_windows.shape[3],input_windows.shape[4]]
