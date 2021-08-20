@@ -54,7 +54,7 @@ def restore_from_mtx(model, mtx_dir):
     for layer, mtx_f in zip(prunable_layers, mtx_files):
         matrix = np.array(sio.mmread(os.path.join(
             mtx_dir, mtx_f)).todense()).astype(np.float32)
-        layer.load_from_np(matrix)
+        layer.build_from_np(matrix.T)
 
 
 def global_sparsity(model):
@@ -66,14 +66,9 @@ def global_sparsity(model):
     size = 0
     for layer in prunable_layers:
         if(isinstance(layer, GeneralConv2D)):
-            if(isinstance(layer.kernel, SparseMatrix)):
-                size += layer.kernel.size
-                nnz += layer.kernel.nnz
-            else:
-                m = layer.kernel.numpy()
-                nnz += np.count_nonzero(m)
-                size += np.prod(m.shape)
+            size += layer.size
+            nnz += layer.nnz
         else:
-            size += layer.w.size
-            nnz += layer.w.nnz
-    return round(nnz/size, 2)
+            size += layer._rows*layer._columns
+            nnz += layer._nnz
+    return round((nnz/size).numpy(),2)

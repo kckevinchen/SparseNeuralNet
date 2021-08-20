@@ -24,7 +24,7 @@ class Resnet(tf.keras.Model):
     self.layer3 = self._make_layer(block, in_planes * 4, num_blocks[2], stride=2)
     self.layer4 = self._make_layer(block, in_planes * 8, num_blocks[3], stride=2)
     self.avgpool = tf.keras.layers.GlobalAveragePooling2D(data_format="channels_first")
-    self.fc = SparseLinear(in_planes*8*block.expansion, num_classes)
+    self.fc = SparseLinear(num_classes)
     self.temp = temp
     self.flatten = tf.keras.layers.Flatten(data_format="channels_first")
   
