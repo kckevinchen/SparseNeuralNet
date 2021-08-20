@@ -270,10 +270,11 @@ class GeneralConv2D(tf.keras.layers.Layer):
     """
 
     def __init__(self, filters, kernel_size, stride=1, padding=0,
-                 bias=True, sparsity=0.5, name=None, sparse_level=3):
+                 bias=True, sparsity=0.5, name=None, sparse_level=3, save_input_shape=False):
         super(GeneralConv2D, self).__init__(name=name)
         self.padding_layer = None
         # Padding
+        self.save_input_shape=save_input_shape
         if padding != 0:
             self.padding_layer = tf.keras.layers.ZeroPadding2D(
                 padding=padding, data_format="channels_first")
@@ -308,6 +309,7 @@ class GeneralConv2D(tf.keras.layers.Layer):
         self.conv_layer.load_from_np(kernel_np)
 
     def call(self, inputs):
+        if self.save_input_shape: self.layer_input_shape = inputs.shape
         if self.padding_layer is None:
             return self.conv_layer(inputs)
         inputs = self.padding_layer(inputs)
