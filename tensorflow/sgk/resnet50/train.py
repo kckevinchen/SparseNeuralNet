@@ -4,6 +4,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import time
 from tqdm import tqdm
 from utils import *
+from resnet import *
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
@@ -73,19 +74,19 @@ def train(args):
 
     # optimizer
     opt = tf.keras.optimizers.SGD(
-        learning_rate=0.1, momentum=0.9, nesterov=False, name='SGD')
+        learning_rate=0.01, momentum=0.9, nesterov=False, name='SGD')
 
     run_name = ("resnet50" + '_' + "cifar100" + "_1")
 
     writer_name = 'runs/' + run_name
     writer = tf.summary.create_file_writer(writer_name)
-    print("Build model")
-    model.build((batch_size, 3, 32, 32))
 
+    print("Build model")
     if(args.sparse_level != 0):
         print("Load weight from mtx")
         restore_from_mtx(model,args.mtx_path)
-        print("sparsity", global_sparsity(model))
+    model.build((batch_size, 3, 32, 32))
+    print("sparsity", global_sparsity(model))
 
     for epoch in range(num_epochs):
         train_loss_avg = tf.keras.metrics.Mean()
@@ -153,8 +154,8 @@ if __name__ == "__main__":
     parser.add_argument("--in_planes", type=int, default=64,
                         help='''Number of input planes in Resnet. Afterwards they duplicate after
                         each conv with stride 2 as usual.''')
-    parser.add_argument("--sparse_level", help="sparse operation level 0:dense, 1:sparse+dense kernel, 2:partial sparse, 3:fully sparse", type=int, default=3)
-    parser.add_argument("--mtx_path", type=str, default=None,
+    parser.add_argument("--sparse_level", help="sparse operation level 0:dense, 1:sparse+dense kernel, 2:partial sparse, 3:fully sparse", type=int, default=1)
+    parser.add_argument("--mtx_path", type=str, default="./mtx_229_0.1",
                         help='''Whether to load from mtx file.''')
     parser.add_argument("--frac_train_data", type=float, default=0.9, 
                         help='Fraction of data used for training (only applied in CIFAR)')
