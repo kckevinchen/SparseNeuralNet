@@ -71,6 +71,9 @@ def get_layers_conv3x3():
 
 def profile_particular_layer(layer, inputs, num_iter, logdir):
 	graph = tf.function(layer)
+	for _ in range(30):
+		graph(inputs)
+
 	with tf.profiler.experimental.Profile(logdir):
 		for _ in range(num_iter):
 			graph(inputs)
@@ -80,9 +83,9 @@ def profile_conv1x1(logdir):
 	layers, indexes = get_layers_conv1x1()
 	dense, masked_dense, sparse_1x1 = layers[indexes[0]]
 	input_val = get_layer_input(dense)
-	profile_particular_layer(dense, input_val, 5, "./{}/conv1x1/dense".format(logdir))
-	profile_particular_layer(masked_dense, input_val, 5, "./{}/conv1x1/masked_dense".format(logdir))
-	profile_particular_layer(sparse_1x1, input_val, 5, "./{}/conv1x1/sparse_1x1".format(logdir))
+	profile_particular_layer(dense, input_val, 20, "./{}/conv1x1/dense".format(logdir))
+	profile_particular_layer(masked_dense, input_val, 20, "./{}/conv1x1/masked_dense".format(logdir))
+	profile_particular_layer(sparse_1x1, input_val, 20, "./{}/conv1x1/sparse_1x1".format(logdir))
 
 	
 def get_layer_input(layer):
