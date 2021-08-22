@@ -274,7 +274,7 @@ class SparseLinear(tf.keras.layers.Layer):
         if(kernel_np.shape[1] == self.output_dim):
             kernel_np = kernel_np.T
         else:
-            assert kernel_np.shape[0] == self.filters , "numpy kernel dimension mismatch"
+            assert kernel_np.shape[0] == self.output_dim , "numpy kernel dimension mismatch"
         assert self.built == False, "Already build"
         _to_sparse_matrix(kernel_np,self,reinit)
         if self.use_bias:
