@@ -253,7 +253,7 @@ class SparseLinear(tf.keras.layers.Layer):
     def build(self,input_shape):
         if(self.built):
             return
-        input_dim = input_shape[0]
+        input_dim = input_shape[1]
         kernel_np = ss.random(self.output_dim,input_dim, density=1-self.sparsity).toarray()
         self.build_from_np(kernel_np)
 
