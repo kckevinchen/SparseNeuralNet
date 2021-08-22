@@ -410,6 +410,8 @@ class GeneralConv2D(tf.keras.layers.Layer):
     def size(self):
         if(isinstance(self.conv_layer,MaskedConv2D)):
             return tf.size(self.conv_layer._underlying_kernel,out_type=tf.dtypes.int32)
+        elif (isinstance(self.conv_layer, tf.keras.layers.Conv2D)):
+            return tf.size(self.conv_layer.kernel)
         else:
             return self.conv_layer._rows *self.conv_layer._columns
 
