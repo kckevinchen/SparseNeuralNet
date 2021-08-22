@@ -73,6 +73,39 @@ def profile_training(sparse_level, logdir, num_iteration=10):
 		for x, y in tqdm(train_data):
 			train_for_epoch(model, x, y, opt, loss_obj)
 
+def profile_inference(sparse_level, logdir, num_iteration=10):
+	batch_size = 32
+	mtx_path = "./mtx_229_0.1"
+	train_for_epoch = get_train_for_epoch()
+	model = resnet50(num_classes=100, sparse_level=sparse_level)
+
+	# load data
+	train_data, _, _ = load_cifar100(batch_size, 0.1)
+	# loss
+	loss_obj = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+	# optimizer
+	opt = tf.keras.optimizers.SGD(
+		learning_rate=0.01, momentum=0.9, nesterov=False, name='SGD')
+	run_name = ("resnet50" + '_' + "cifar100" + "_1")
+
+	if(sparse_level != 0):
+		print("Load weight from mtx")
+		restore_from_mtx(model, mtx_path)
+	model.build((batch_size, 3, 32, 32))
+	model(np.random.randn(batch_size, 3, 32, 32))
+	train_data = train_data.take(min(len(train_data), num_iteration))
+	# with tf.profiler.experimental.Profile(logdir):
+	# 	for x, y in tqdm(train_data):
+	# 		model(x)
+	model = tf.function(model)
+	tf.profiler.experimental.start(logdir)
+	step = 0
+	for x, y in tqdm(train_data):
+		with tf.profiler.experimental.Trace("inference", step_num=step):
+			model(x)
+		step += 1
+	tf.profiler.experimental.stop()
 
 if __name__ == "__main__":
 	name = {0: "dense", 1: "maksed_dense",
@@ -84,7 +117,11 @@ if __name__ == "__main__":
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument("--num_iteration", type=int, default=100)
 	parser.add_argument("--directory", type=str, default="logdir")
+	parser.add_argument("--mode", type=str, default="train")
 	args = parser.parse_args()
 	for i in range(4):
 		print("currently profiling {}".format(name[i]))
-		profile_training(i, "{}/{}".format(args.directory, name[i]), args.num_iteration)
+		if args.mode=="train":
+			profile_training(i, "{}/{}".format(args.directory, name[i]), args.num_iteration)
+		else:
+			profile_inference(i, "{}/{}".format(args.directory, name[i]), args.num_iteration)
