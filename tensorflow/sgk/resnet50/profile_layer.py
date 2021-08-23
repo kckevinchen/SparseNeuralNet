@@ -70,6 +70,7 @@ def get_layers_conv3x3():
 	return result, indexes
 
 def profile_particular_layer_inference(layer, exaust_input, model_input, num_exaust_iter, logdir):
+	print('debug!! logdir: {}'.format(logdir))
 	graph = tf.function(layer)
 	for _ in range(num_exaust_iter):
 		graph(exaust_input)
@@ -104,25 +105,32 @@ def profile_particular_layer_train(layer, exaust_input, model_input, num_exaust_
 		steps(exaust_input, layer, opt)	
 
 	with tf.profiler.experimental.Profile(logdir):
-		for x in tqdm(model_input):
+		for x in model_input:
 			steps(x, layer, opt)
 
 
-def profile_conv1x1_inference(logdir):
-	layers, indexes = get_layers_conv1x1()
-	dense, masked_dense, sparse_1x1 = layers[indexes[0]]
-	exaust_input, model_input = get_layer_input(dense, 20)
-	profile_particular_layer_inference(dense, exaust_input, model_input, 20, "./{}/conv1x1/dense".format(logdir))
-	profile_particular_layer_inference(masked_dense, exaust_input, model_input, 20, "./{}/conv1x1/masked_dense".format(logdir))
-	profile_particular_layer_inference(sparse_1x1, exaust_input, model_input, 20, "./{}/conv1x1/sparse_1x1".format(logdir))
+def profile_conv(logdir, method_type, layer_type, num_layers=1):
+	"""
+	profile all the conv layers in resnet50 and save in the logdir
 
-def profile_conv1x1_train(logdir):
-	layers, indexes = get_layers_conv1x1()
+	method is either "train" or "inference"
+	layer_type is either "conv1x1" or "conv3x3"
+	num_layers is the number of layers you want to profile
+	"""
+	profile_methods = {"train": profile_particular_layer_train, "inference": profile_particular_layer_inference}
+	profile_method = profile_methods[method_type]
+	layer_methods = {"conv1x1": get_layers_conv1x1, "conv3x3": get_layers_conv3x3}
+	layer_method = layer_methods[layer_type]
+	layers, indexes = layer_method()
 	dense, masked_dense, sparse_1x1 = layers[indexes[0]]
 	exaust_input, model_input = get_layer_input(dense, 20)
-	profile_particular_layer_train(dense, exaust_input, model_input, 20, "./{}/conv1x1/dense".format(logdir))
-	profile_particular_layer_train(masked_dense, exaust_input, model_input, 20, "./{}/conv1x1/masked_dense".format(logdir))
-	profile_particular_layer_train(sparse_1x1, exaust_input, model_input, 20, "./{}/conv1x1/sparse_1x1".format(logdir))
+	for i in tqdm(range(num_layers)):
+		dense, masked_dense, sparse_1x1 = layers[indexes[i]]
+		#example of the directory:
+			#logdir/train/conv1x1/layer_1/dense
+		profile_method(dense, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/dense".format(logdir, method_type, layer_type,i))
+		profile_method(masked_dense, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/masked_dense".format(logdir, method_type,layer_type, i))
+		profile_method(sparse_1x1, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/sparse_1x1".format(logdir, method_type,layer_type, i))
 
 
 def get_layer_input(layer, num_iter):
@@ -134,7 +142,12 @@ def get_layer_input(layer, num_iter):
 	return exaust_input, model_input
 
 if __name__ == "__main__":
-	profile_conv1x1_train("profiler_logs")
+    profile_conv("profiler_logs", "inference", "conv3x3")
+
+
+
+	# profile_conv1x1_train("profiler_logs")
+	# profile_conv1x1("profiler_logs", "inference")
 	# load_model_layers(sparse_level=1)
 
 	# a = resnet50(num_classes=100, sparse_level=0, save_input_shape=True)
