@@ -70,7 +70,6 @@ def get_layers_conv3x3():
 	return result, indexes
 
 def profile_particular_layer_inference(layer, exaust_input, model_input, num_exaust_iter, logdir):
-	print('debug!! logdir: {}'.format(logdir))
 	graph = tf.function(layer)
 	for _ in range(num_exaust_iter):
 		graph(exaust_input)
@@ -142,19 +141,16 @@ def get_layer_input(layer, num_iter):
 	return exaust_input, model_input
 
 if __name__ == "__main__":
-    profile_conv("profiler_logs", "inference", "conv3x3")
+	#example call to profile one conv3x3 layer
+	# profile_conv("profiler_logs", "inference", "conv3x3")
 
+	parser = argparse.ArgumentParser(
+		description="Training Sparse Resnet.",
+		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	parser.add_argument("--logdir", type=str, default = "profiler_logs")
+	parser.add_argument("--method_type", type=str, default="inference")
+	parser.add_argument("--layer_type", type=str, default="conv3x3")
 
+	args = parser.parse_args()
+	profile_conv(args.logdir, args.method_type, args.layer_type)
 
-	# profile_conv1x1_train("profiler_logs")
-	# profile_conv1x1("profiler_logs", "inference")
-	# load_model_layers(sparse_level=1)
-
-	# a = resnet50(num_classes=100, sparse_level=0, save_input_shape=True)
-	# train_data, val, test = load_cifar100(32, 0.1, True, 123)
-	# print(iter(train_data).next())
-	# for x, y in train_data:
-	# 	print(x.shape)
-	# 	break
-	# print("cao nai ma")
-	# (x_train, y_train), (x_test, y_test) = tf.keras.datasets.ci 
