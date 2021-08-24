@@ -121,16 +121,16 @@ def profile_conv(logdir, method_type, layer_type, num_layers=1):
 	layer_methods = {"conv1x1": get_layers_conv1x1, "conv3x3": get_layers_conv3x3}
 	layer_method = layer_methods[layer_type]
 	layers, indexes = layer_method()
-	dense, masked_dense, sparse_1x1 = layers[indexes[0]]
-	exaust_input, model_input = get_layer_input(dense, 20)
+	num_layers = num_layers if num_layers > 0 else len(indexes)
 	for i in tqdm(range(num_layers)):
 		dense, masked_dense, sparse_1x1 = layers[indexes[i]]
+		original_index = indexes[i]
+		exaust_input, model_input = get_layer_input(dense, 20)
 		#example of the directory:
 			#logdir/train/conv1x1/layer_1/dense
-		profile_method(dense, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/dense".format(logdir, method_type, layer_type,i))
-		profile_method(masked_dense, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/masked_dense".format(logdir, method_type,layer_type, i))
-		profile_method(sparse_1x1, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/sparse_1x1".format(logdir, method_type,layer_type, i))
-
+		profile_method(dense, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/dense".format(logdir, method_type, layer_type,original_index))
+		profile_method(masked_dense, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/masked_dense".format(logdir, method_type,layer_type, original_index))
+		profile_method(sparse_1x1, exaust_input, model_input, 20, "./{}/{}/{}/layer_{}/sparse".format(logdir, method_type,layer_type, original_index))
 
 def get_layer_input(layer, num_iter):
 	input_shape = layer.layer_input_shape
@@ -150,7 +150,14 @@ if __name__ == "__main__":
 	parser.add_argument("--logdir", type=str, default = "profiler_logs")
 	parser.add_argument("--method_type", type=str, default="inference")
 	parser.add_argument("--layer_type", type=str, default="conv3x3")
-
+	parser.add_argument("--profile_all", type=bool, default=False)
 	args = parser.parse_args()
-	profile_conv(args.logdir, args.method_type, args.layer_type)
-
+	if args.profile_all:
+		ls = ["conv1x1", "conv3x3"]
+		ms = ["train", "inference"]
+		for l in ls:
+			for m in ms:
+				print("profiling {} for {}".format(l, m))
+				profile_conv(args.logdir, m, l, -1)
+	else:
+		profile_conv(args.logdir, args.method_type, args.layer_type)

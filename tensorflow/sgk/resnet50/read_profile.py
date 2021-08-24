@@ -1,3 +1,4 @@
+import kernel_stats_pb2
 import tf_stats_pb2
 from google.protobuf.json_format import MessageToDict, MessageToJson
 
@@ -14,16 +15,38 @@ In order to use this file,
 	4 read the xxx.tensorflow_stats.pb
 """
 
-def read_pb(tracefile):
-    fd = open(tracefile, 'rb')
-    A = tf_stats_pb2.TfStatsDatabase()
-    A.ParseFromString(fd.read())
-    fd.close()
+def read_tf_stat_pb(tracefile):
+	fd = open(tracefile, 'rb')
+	A = tf_stats_pb2.TfStatsDatabase()
+	A.ParseFromString(fd.read())
+	fd.close()
 
-    decoded = MessageToDict(A)
-    print(decoded)
+	decoded = MessageToDict(A)
+	print(decoded)
+
+
+def read_kernel_stat_pb(tracefile):
+	fd = open(tracefile, 'rb')
+	A = kernel_stats_pb2.KernelStatsDb()
+	A.ParseFromString(fd.read())
+	fd.close()
+	decoded = MessageToDict(A)
+	return process_reports(decoded)
+
+def process_reports(reports):
+	"""
+	process the decoded report, return [(kernel_name, avg_runtime_ns), ...]
+	"""
+	reports = reports["reports"]
+	result = []
+	for r in reports:
+		name = r["name"]
+		total_duration = int(r["totalDurationNs"])
+		num_iteration = int(r["occurrences"])
+		result.append((name, int(total_duration / num_iteration)))
+	return result
 
 if __name__ == "__main__":
-	directory = "/home/tian/utea/SparseBenchmark/exp/SparseNeuralNet/tensorflow/sgk/resnet50/profiler_logs/conv1x1/dense/plugins/profile/2021_08_20_12_22_20/2a85d1cda857.tensorflow_stats.pb"
-	read_matmul_timing(directory)
-	
+	directory = "profiler_logs/inference/conv1x1/layer_1/dense/plugins/profile/2021_08_23_18_49_48/af663c433fab.kernel_stats.pb"
+	reports = read_kernel_stat_pb(directory)
+	print(reports)
