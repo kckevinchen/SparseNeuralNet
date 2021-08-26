@@ -2,19 +2,16 @@ from tensorboard_plugin_profile.protobuf import kernel_stats_pb2
 from tensorboard_plugin_profile.protobuf import tf_stats_pb2
 from tensorboard_plugin_profile.protobuf import overview_page_pb2
 from google.protobuf.json_format import MessageToDict, MessageToJson
-
 """
-In order to use this file, 
-	1 compile the ~/tensorflow/tensorflow/core/profiler/protobuf/tf_stats.proto
-	Here is the code: protoc -I. --python_out . tf_stats.proto 
-	More on: https://developers.google.com/protocol-buffers/docs/pythontutorial#compiling-your-protocol-buffers
-
-	2 make sure the protobuf is installed in pip
-
-	3 Make the tracefiles through the tf profiler
-
-	4 read the xxx.tensorflow_stats.pb
+ 
 """
+substitution = {
+	#conv3x3
+	"void sputnik::(anonymous namespace)::CudaSddmmKernel<float4, 4, 32, 32, 8, 0>(int, int, int, int const*, int const*, int const*, float const*, float const*, float*)": "SPMM",
+	"void Eigen::internal::EigenMetaKernel<Eigen::TensorEvaluator<Eigen::TensorAssignOp<Eigen::TensorMap<Eigen::Tensor<float, 4, 1, int>, 16, Eigen::MakePointer>, Eigen::TensorReshapingOp<Eigen::DSizes<int, 4> const, Eigen::TensorImagePatchOp<-1l, -1l, Eigen::TensorMap<Eigen::Tensor<float const, 4, 1, int>, 16, Eigen::MakePointer> const> const> const> const, Eigen::GpuDevice>, int>(Eigen::TensorEvaluator<Eigen::TensorAssignOp<Eigen::TensorMap<Eigen::Tensor<float, 4, 1, int>, 16, Eigen::MakePointer>, Eigen::TensorReshapingOp<Eigen::DSizes<int, 4> const, Eigen::TensorImagePatchOp<-1l, -1l, Eigen::TensorMap<Eigen::Tensor<float const, 4, 1, int>, 16, Eigen::MakePointer> const> const> const> const, Eigen::GpuDevice>, int)" : "img2col",
+}
+
+
 
 def read_tf_stat_pb(tracefile):
 	fd = open(tracefile, 'rb')
@@ -23,7 +20,7 @@ def read_tf_stat_pb(tracefile):
 	fd.close()
 
 	decoded = MessageToDict(A)
-	print(decoded)
+	return decoded
 
 
 def read_kernel_stat_pb(tracefile):
@@ -44,6 +41,9 @@ def read_overview_page(tracefile):
 	compute_percent = decoded["inputAnalysis"]["computePercent"]
 	return step_time, compute_percent
 
+def process_op_name(op_name):
+	op_name = op_name.split("/")
+	return op_name[-1]
 
 def process_reports(reports):
 	"""
@@ -52,13 +52,18 @@ def process_reports(reports):
 	reports = reports["reports"]
 	result = []
 	for r in reports:
-		name = r["name"]
+		name = r["name"] 
 		total_duration = int(r["totalDurationNs"])
 		num_iteration = int(r["occurrences"])
-		result.append((name, int(total_duration / num_iteration)))
+		# print((name, int(total_duration / num_iteration), process_op_name(r["opName"])))
+		# exit()
+		result.append((name, int(total_duration / num_iteration), process_op_name(r["opName"])))
 	return result
 
+
+
+
+
 if __name__ == "__main__":
-	directory = "/home/tian/utea/SparseBenchmark/exp/SparseNeuralNet/tensorflow/sgk/resnet50/logdir/inference/dense/plugins/profile/2021_08_23_16_13_55/af663c433fab.overview_page.pb"
-	step_time, compute_percent = read_overview_page(directory)
-	print("step time {}, compute time {}".format(step_time, step_time * compute_percent * 0.01))
+	path = "/home/tian/utea/SparseBenchmark/exp/SparseNeuralNet/tensorflow/sgk/resnet50/profiler_logs/train/conv3x3/layer_48/sparse/plugins/profile/2021_08_23_18_51_27/af663c433fab.kernel_stats.pb"
+	read_kernel_stat_pb(path)
