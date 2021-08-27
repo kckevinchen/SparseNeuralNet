@@ -56,6 +56,14 @@ def restore_from_mtx(model, mtx_dir):
             mtx_dir, mtx_f)).todense()).astype(np.float32)
         layer.build_from_np(matrix.T)
 
+def mix_dense_sparse(model, dense_index):
+    edge_layers = flatten_layers(model)
+    conv_layers = list(filter(
+        lambda layer: isinstance(layer, GeneralConv2D), edge_layers
+    ))
+    for i in dense_index:
+        conv_layers[i].change_to_dense()
+
 
 def global_sparsity(model):
     edge_layers = flatten_layers(model)

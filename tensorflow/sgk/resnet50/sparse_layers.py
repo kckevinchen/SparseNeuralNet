@@ -355,6 +355,7 @@ class GeneralConv2D(tf.keras.layers.Layer):
         self.padding_layer = None
         # Padding
         self.save_input_shape=save_input_shape
+        self.layer_args = {"filters": filters, "kernel_size": kernel_size, "use_bias":bias, "strides":stride, "name": name, "data_format": "channels_first"}
         if padding != 0:
             self.padding_layer = tf.keras.layers.ZeroPadding2D(
                 padding=padding, data_format="channels_first")
@@ -400,6 +401,10 @@ class GeneralConv2D(tf.keras.layers.Layer):
             return self.conv_layer(inputs)
         inputs = self.padding_layer(inputs)
         return self.conv_layer(inputs)
+
+    def change_to_dense(self):
+        self.conv_layer = tf.keras.layers.Conv2D(**self.layer_args)
+
     @property
     def nnz(self):
         if(isinstance(self.conv_layer,MaskedConv2D)):

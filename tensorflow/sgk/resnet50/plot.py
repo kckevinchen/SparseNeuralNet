@@ -33,8 +33,8 @@ def _get_layer_info(layers, indexes):
 def get_layer_info():
     conv1x1_info = _get_layer_info(*get_layers_conv1x1())
     conv3x3_info = _get_layer_info(*get_layers_conv3x3())
-    # return conv1x1_info.update(conv3x3_info)
     return { **conv1x1_info, **conv3x3_info }
+
 # layer runtime classify ====================
 # def get_spmm_other_runtime(dictionary):
 #     """

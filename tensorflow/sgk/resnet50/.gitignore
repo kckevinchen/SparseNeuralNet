@@ -2,3 +2,9 @@ mtx_229_0.1/
 profiler_logs/
 logdir/
 runs/
+new_logs/
+profile_mix/
+layer_profile_logs/
+model_profile_logs/
+mtx_plots/
+plots/

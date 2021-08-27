@@ -41,7 +41,7 @@ def get_layers_conv1x1():
 	indexes = []
 	result = {}
 	for i, v in enumerate(layers_level_3):
-		if "level_3_SparseConv1x1_ksize_1" == v.type:
+		if "level_3_SparseConv1x1_ksize_1" == v.type or "level_3_SparseConv2D_ksize_1" == v.type:
 			indexes.append(i)
 	for i in indexes:
 		result[i] = (layers_level_0[i], layers_level_1[i], layers_level_3[i])
@@ -52,6 +52,8 @@ def get_layers_conv1x1():
 
 def get_layers_conv3x3():
 	"""
+	conv3x3 also includes 3 layers whose kernel = 1 but stride != 1
+
 	Return three layers,
 	conv3x3 using the tf.keras.layers.Conv2D (sparse level 0)
 	conv3x3 using the MaskedConv2D (sparse level 1)
@@ -63,7 +65,8 @@ def get_layers_conv3x3():
 	indexes = []
 	result = {}
 	for i, v in enumerate(layers_level_3):
-		if "level_3_SparseConv2D_ksize_3" == v.type:
+		if "level_3_SparseConv2D_ksize_3" == v.type :
+		# if "level_3_sparseconv2d_ksize_3" == v.type:
 			indexes.append(i)
 	for i in indexes:
 		result[i] = (layers_level_0[i], layers_level_1[i], layers_level_3[i])
@@ -147,7 +150,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(
 		description="Training Sparse Resnet.",
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument("--logdir", type=str, default = "profiler_logs")
+	parser.add_argument("--logdir", type=str, default = "new_logs")
 	parser.add_argument("--method_type", type=str, default="inference")
 	parser.add_argument("--layer_type", type=str, default="conv3x3")
 	parser.add_argument("--profile_all", type=bool, default=False)
