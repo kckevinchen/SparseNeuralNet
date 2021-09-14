@@ -160,7 +160,7 @@ class SparseConv2D(tf.keras.layers.Layer):
     def call(self, inputs, training=None):
         # assert len(input_shape) == 4, "expect 4 dimensional input"
         # NCHW -> NHWC
-        flat_inputs = tf.transpose(inputs, perm=[0, 3, 2, 1])
+        flat_inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
 
         flat_inputs = tf.image.extract_patches(
             flat_inputs, self.kernel_size, self.strides, self.rates, self.padding)
@@ -204,9 +204,9 @@ class MaskedConv2D(tf.keras.layers.Conv2D):
         if (self.masked):
             raise Exception("Error: already masked")
         if(kernel_np.shape[0] == self.filters):
-            self.kernel_np = kernel_np
-        elif(kernel_np.shape[1] == self.filters):
             self.kernel_np = kernel_np.T
+        elif(kernel_np.shape[1] == self.filters):
+            self.kernel_np = kernel_np
         else:
             raise Exception("Error: kernel size")
         self.kernel_np = self.kernel_np.reshape((self.kernel_size[0],self.kernel_size[1],-1,self.filters))
